@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Apparel Business</title>
+    <style>
+        /* Add your custom CSS styles here */
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Your Apparel Store</h1>
+    </header>
+
+    <main>
+        <section id="stock">
+            <h2>Current Stock</h2>
+            <p>Update your stock manually:</p>
+            <form id="stockForm">
+                <label for="item">Item:</label>
+                <input type="text" id="item" name="item" required><br>
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" required><br>
+                <button type="button" onclick="updateStock()">Update Stock</button>
+            </form>
+        </section>
+
+        <section id="payment">
+            <h2>Payment Options</h2>
+            <p>Add links to payment options connected to your bank:</p>
+            <ul>
+                <li><a href="https://yourpaymentgateway.com/pay">Pay with Credit Card</a></li>
+                <li><a href="https://yourpaymentgateway.com/paypal">Pay with PayPal</a></li>
+                <!-- Add more payment options as needed -->
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Your Apparel Business</p>
+    </footer>
+
+    <script>
+        function updateStock() {
+            // JavaScript function to handle stock update
+            var item = document.getElementById("item").value;
+            var quantity = document.getElementById("quantity").value;
+
+            // Here you can write code to update your stock data
+            console.log("Stock updated for item: " + item + ", Quantity: " + quantity);
+            // You may also send this data to your server for processing and storage
+            // Example: You can use AJAX to send this data to a server-side script (PHP, Node.js, etc.)
+        }
+    </script>
+</body>
+</html>
