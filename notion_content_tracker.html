@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #efefed;
+    --border: rgba(55,53,47,0.12);
+    --border2: rgba(55,53,47,0.2);
+    --text: #37352f;
+    --text2: #787774;
+    --text3: #afafac;
+    --radius: 6px;
+    --radius-lg: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191919;
+      --bg2: #252525;
+      --bg3: #2f2f2f;
+      --border: rgba(255,255,255,0.09);
+      --border2: rgba(255,255,255,0.18);
+      --text: #e6e6e4;
+      --text2: #999997;
+      --text3: #666664;
+    }
+    .p1 { background: #142d44 !important; color: #9dc6ef !important; }
+    .p2 { background: #1a2e12 !important; color: #a3cc80 !important; }
+    .p3 { background: #3a2110 !important; color: #e8b86d !important; }
+    .p4 { background: #38121e !important; color: #e8a0b8 !important; }
+    .a-energy { background: #3d1a0d !important; color: #f0a880 !important; }
+    .a-prostate { background: #0d2e24 !important; color: #80d4b4 !important; }
+    .a-hormones { background: #1e1a44 !important; color: #b8b0f0 !important; }
+    .a-performance { background: #3a2110 !important; color: #e8b86d !important; }
+    .a-mindset { background: #38121e !important; color: #e8a0b8 !important; }
+    .check-btn.done { background: #1a2e12 !important; border-color: #3b6d11 !important; color: #a3cc80 !important; }
+    select { background: var(--bg2); color: var(--text); }
+    .status-sel { background: var(--bg2) !important; color: var(--text) !important; }
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 20px 16px 40px;
+  }
+
+  h1 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+  .topbar { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .title-block { flex: 1; min-width: 160px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; }
+
+  select {
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border2);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+  select:hover { border-color: var(--text3); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--bg2);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+  }
+  .stat-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+  .stat-num { font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--text3); }
+
+  .progress-bar-wrap { margin-bottom: 18px; }
+  .progress-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: flex; justify-content: space-between; }
+  .progress-track { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: #4a9c5f; transition: width .3s ease; }
+
+  .table-wrap { overflow-x: auto; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+  th {
+    background: var(--bg2);
+    color: var(--text2);
+    font-weight: 500;
+    font-size: 11px;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 0.5px solid var(--border);
+    white-space: nowrap;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  td { padding: 7px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+
+  .week-badge {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--bg3); color: var(--text2);
+    border: 0.5px solid var(--border);
+  }
+
+  .phase-badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+  .p1 { background: #dbeffe; color: #0c5a8f; }
+  .p2 { background: #dbeddb; color: #2a6b2a; }
+  .p3 { background: #fdeece; color: #7a4b0a; }
+  .p4 { background: #fde8f0; color: #8b2455; }
+
+  .area-badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .a-energy { background: #fce8de; color: #8c3415; }
+  .a-prostate { background: #d6f4e9; color: #0a5e42; }
+  .a-hormones { background: #e8e5fc; color: #3d2fa0; }
+  .a-performance { background: #fdeece; color: #7a4b0a; }
+  .a-mindset { background: #fde8f0; color: #8b2455; }
+
+  .topic-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .check-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius); border: 0.5px solid var(--border2);
+    background: var(--bg); cursor: pointer; font-size: 14px;
+    color: var(--text2); transition: all .15s; user-select: none;
+  }
+  .check-btn.done { background: #dbeddb; border-color: #a3cc80; color: #2a6b2a; }
+  .check-btn:hover { background: var(--bg3); }
+
+  .counter-cell { display: flex; align-items: center; gap: 3px; }
+  .count-val { font-size: 12px; min-width: 16px; text-align: center; font-weight: 500; color: var(--text); }
+  .count-max { font-size: 10px; color: var(--text3); }
+  .count-btn {
+    width: 18px; height: 18px; border-radius: 3px;
+    border: 0.5px solid var(--border2); background: var(--bg);
+    cursor: pointer; font-size: 13px; line-height: 1;
+    color: var(--text2); display: flex; align-items: center; justify-content: center;
+  }
+  .count-btn:hover { background: var(--bg3); }
+
+  .status-sel {
+    font-family: var(--font); font-size: 11px; border-radius: 4px;
+    padding: 3px 5px; border: 0.5px solid var(--border2);
+    background: var(--bg); color: var(--text); cursor: pointer; outline: none;
+  }
+  .s-ns { color: var(--text2); }
+  .s-ip { color: #1564b0; }
+  .s-done { color: #2a6b2a; }
+
+  .empty { text-align: center; padding: 2rem; color: var(--text2); font-size: 13px; }
+
+  .storage-note {
+    margin-top: 14px; padding: 10px 14px;
+    background: var(--bg2); border-radius: var(--radius);
+    border-left: 3px solid #4a9c5f;
+    font-size: 12px; color: var(--text2);
+  }
+
+  .notion-tip {
+    margin-top: 12px; padding: 10px 14px;
+    background: #fdeece; border-radius: var(--radius);
+    font-size: 12px; color: #7a4b0a;
+  }
+  @media (prefers-color-scheme: dark) {
+    .notion-tip { background: #3a2110; color: #e8b86d; }
+    .storage-note { background: var(--bg2); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title-block">
+    <h1>📋 Content Tracker</h1>
+    <div class="subtitle">70 topics · 35 weeks · 4 phases</div>
+  </div>
+  <div class="filters">
+    <select id="fPhase" onchange="render()">
+      <option value="">All phases</option>
+      <option>Phase 1: Awareness</option>
+      <option>Phase 2: Education</option>
+      <option>Phase 3: Performance</option>
+      <option>Phase 4: Conversion</option>
+    </select>
+    <select id="fArea" onchange="render()">
+      <option value="">All topics</option>
+      <option>Energy</option>
+      <option>Prostate</option>
+      <option>Hormones</option>
+      <option>Performance</option>
+      <option>Mindset</option>
+    </select>
+    <select id="fStatus" onchange="render()">
+      <option value="">All statuses</option>
+      <option>Not Started</option>
+      <option>In Progress</option>
+      <option>Done</option>
+    </select>
+    <select id="fWeek" onchange="render()"><option value="">All weeks</option></select>
+  </div>
+</div>
+
+<div class="stats-row" id="statsRow"></div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span id="progLabel">Overall completion</span><span id="progPct">0%</span></div>
+  <div class="progress-track"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>Week</th><th>Phase</th><th>Area</th><th>Topic</th>
+      <th>YT</th><th>Medium</th><th>Pins /7</th><th>Shorts /5</th><th>Quora /2</th><th>Status</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="storage-note">
+  💾 Progress is saved in your browser's localStorage — it will persist across page refreshes.
+</div>
+
+<script>
+const RAW=[
+["W1","Phase 1: Awareness","Energy","Why men lose energy after 35"],
+["W1","Phase 1: Awareness","Energy","5 habits secretly draining your energy"],
+["W2","Phase 1: Awareness","Energy","Why you feel tired even after 8 hours of sleep"],
+["W2","Phase 1: Awareness","Energy","Morning habits that drain your energy"],
+["W3","Phase 1: Awareness","Energy","Why your stamina isn't what it used to be"],
+["W3","Phase 1: Awareness","Prostate","Early signs of prostate issues most men ignore"],
+["W4","Phase 1: Awareness","Energy","The hidden causes of daily fatigue in men"],
+["W4","Phase 1: Awareness","Prostate","Why frequent urination at night shouldn't be ignored"],
+["W5","Phase 1: Awareness","Energy","Signs your body is running on low energy"],
+["W5","Phase 1: Awareness","Prostate","How prostate issues affect sleep and energy"],
+["W6","Phase 1: Awareness","Energy","Why your energy crashes in the evening"],
+["W6","Phase 1: Awareness","Prostate","Subtle warning signs your prostate may be under stress"],
+["W7","Phase 1: Awareness","Energy","Why caffeine stops working after a point"],
+["W7","Phase 1: Awareness","Prostate","Why sitting too much impacts prostate health"],
+["W8","Phase 1: Awareness","Energy","The difference between tired and depleted"],
+["W8","Phase 1: Awareness","Prostate","The hidden link between hydration and prostate discomfort"],
+["W9","Phase 1: Awareness","Energy","Why weekends don't fix your exhaustion"],
+["W9","Phase 1: Awareness","Prostate","Why ignoring small symptoms leads to bigger problems"],
+["W10","Phase 1: Awareness","Energy","How stress silently drains male energy"],
+["W10","Phase 1: Awareness","Prostate","What happens if you ignore these signs"],
+["W11","Phase 2: Education","Hormones","What happens to male hormones after 30"],
+["W11","Phase 2: Education","Prostate","Why prostate issues become common after 40"],
+["W12","Phase 2: Education","Hormones","Signs your hormones are out of balance"],
+["W12","Phase 2: Education","Prostate","The link between lifestyle and prostate health"],
+["W13","Phase 2: Education","Hormones","Why low drive isn't just mental"],
+["W13","Phase 2: Education","Prostate","How inflammation affects the prostate"],
+["W14","Phase 2: Education","Hormones","The link between stress and hormone disruption"],
+["W14","Phase 2: Education","Prostate","The connection between stress and prostate function"],
+["W15","Phase 2: Education","Hormones","Why men feel off without knowing why"],
+["W15","Phase 2: Education","Prostate","Why your daily routine may be making symptoms worse"],
+["W16","Phase 2: Education","Hormones","Natural ways to support hormonal balance"],
+["W16","Phase 2: Education","Prostate","How diet influences prostate health over time"],
+["W17","Phase 2: Education","Hormones","How sleep affects hormone levels"],
+["W17","Phase 2: Education","Prostate","The role of sleep in maintaining prostate health"],
+["W18","Phase 2: Education","Hormones","Why belly fat and hormones are connected"],
+["W18","Phase 2: Education","Prostate","Simple lifestyle changes men over 40 should consider"],
+["W19","Phase 2: Education","Hormones","The truth about aging vs hormonal decline"],
+["W19","Phase 2: Education","Prostate","How movement and activity affect prostate function"],
+["W20","Phase 2: Education","Energy","How lifestyle impacts male vitality"],
+["W20","Phase 2: Education","Prostate","What men can do early to avoid long-term issues"],
+["W21","Phase 3: Performance","Performance","What kills performance in modern men"],
+["W21","Phase 3: Performance","Prostate","Daily habits that support prostate health"],
+["W22","Phase 3: Performance","Performance","Why consistency matters more than intensity"],
+["W22","Phase 3: Performance","Performance","The biggest lifestyle mistakes men make"],
+["W23","Phase 3: Performance","Performance","The biggest mistakes men make with stamina"],
+["W23","Phase 3: Performance","Energy","How small habits create big energy loss"],
+["W24","Phase 3: Performance","Performance","Why performance anxiety is increasing"],
+["W24","Phase 3: Performance","Performance","Why your routine matters more than motivation"],
+["W25","Phase 3: Performance","Performance","The connection between energy and performance"],
+["W25","Phase 3: Performance","Energy","Night habits that affect your next day"],
+["W26","Phase 3: Performance","Performance","How daily habits impact endurance"],
+["W26","Phase 3: Performance","Performance","Why busy doesn't mean productive"],
+["W27","Phase 3: Performance","Performance","Why recovery is more important than effort"],
+["W27","Phase 3: Performance","Performance","How to reset your daily routine"],
+["W28","Phase 3: Performance","Performance","The truth about losing your edge"],
+["W28","Phase 3: Performance","Performance","How to feel energized again naturally"],
+["W29","Phase 4: Conversion","Mindset","Why men lose confidence after 35"],
+["W29","Phase 4: Conversion","Mindset","The psychological impact of low energy"],
+["W30","Phase 4: Conversion","Mindset","Why aging feels faster than it should"],
+["W30","Phase 4: Conversion","Mindset","What feeling like yourself again really means"],
+["W31","Phase 4: Conversion","Mindset","The truth about masculinity and vitality"],
+["W31","Phase 4: Conversion","Mindset","Why men stop talking about their struggles"],
+["W32","Phase 4: Conversion","Mindset","How physical decline affects confidence"],
+["W32","Phase 4: Conversion","Mindset","Why comparing yourself makes it worse"],
+["W33","Phase 4: Conversion","Mindset","The mindset shift men need after 40"],
+["W33","Phase 4: Conversion","Mindset","How to rebuild confidence naturally"],
+["W34","Phase 4: Conversion","Mindset","Most men think it's age - it's not"],
+["W34","Phase 4: Conversion","Energy","Doctors rarely explain this about male energy"],
+["W35","Phase 4: Conversion","Energy","The hidden reason you feel off"],
+["W35","Phase 4: Conversion","Mindset","This one habit changes everything"],
+];
+
+const STORE_KEY = 'notion_ct_v1';
+
+function initState() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (arr.length === RAW.length) return arr;
+    }
+  } catch(e) {}
+  return RAW.map(() => ({ yt: false, med: false, pins: 0, shorts: 0, quora: 0, status: 'Not Started' }));
+}
+
+let state = initState();
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+const phaseClass = {
+  'Phase 1: Awareness': 'p1',
+  'Phase 2: Education': 'p2',
+  'Phase 3: Performance': 'p3',
+  'Phase 4: Conversion': 'p4'
+};
+const shortPhase = {
+  'Phase 1: Awareness': 'P1 · Awareness',
+  'Phase 2: Education': 'P2 · Education',
+  'Phase 3: Performance': 'P3 · Performance',
+  'Phase 4: Conversion': 'P4 · Conversion'
+};
+const areaClass = {
+  Energy: 'a-energy', Prostate: 'a-prostate',
+  Hormones: 'a-hormones', Performance: 'a-performance', Mindset: 'a-mindset'
+};
+
+let weeksPopulated = false;
+
+function render() {
+  const fp = document.getElementById('fPhase').value;
+  const fa = document.getElementById('fArea').value;
+  const fs = document.getElementById('fStatus').value;
+  const fw = document.getElementById('fWeek').value;
+
+  if (!weeksPopulated) {
+    const wSel = document.getElementById('fWeek');
+    [...new Set(RAW.map(r => r[0]))].forEach(w => {
+      const o = document.createElement('option');
+      o.value = w; o.text = w; wSel.appendChild(o);
+    });
+    weeksPopulated = true;
+  }
+
+  const total = RAW.length;
+  const done = state.filter(s => s.status === 'Done').length;
+  const ip = state.filter(s => s.status === 'In Progress').length;
+  const ytDone = state.filter(s => s.yt).length;
+  const medDone = state.filter(s => s.med).length;
+  const pct = Math.round(done / total * 100);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-label">Topics</div><div class="stat-num">${total}</div><div class="stat-sub">35 weeks</div></div>
+    <div class="stat"><div class="stat-label">Done</div><div class="stat-num">${done}</div><div class="stat-sub">${pct}% complete</div></div>
+    <div class="stat"><div class="stat-label">In Progress</div><div class="stat-num">${ip}</div><div class="stat-sub">&nbsp;</div></div>
+    <div class="stat"><div class="stat-label">YT Videos</div><div class="stat-num">${ytDone}</div><div class="stat-sub">of ${total}</div></div>
+    <div class="stat"><div class="stat-label">Articles</div><div class="stat-num">${medDone}</div><div class="stat-sub">of ${total}</div></div>
+  `;
+
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progPct').textContent = pct + '%';
+
+  const filtered = RAW.map((r, i) => ({ r, i, s: state[i] })).filter(({ r, s }) => {
+    if (fp && r[1] !== fp) return false;
+    if (fa && r[2] !== fa) return false;
+    if (fs && s.status !== fs) return false;
+    if (fw && r[0] !== fw) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">No rows match the current filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(({ r, i, s }) => {
+    const sCls = s.status === 'Done' ? 's-done' : s.status === 'In Progress' ? 's-ip' : 's-ns';
+    return `<tr>
+<td><span class="week-badge">${r[0]}</span></td>
+<td><span class="phase-badge ${phaseClass[r[1]]}">${shortPhase[r[1]]}</span></td>
+<td><span class="area-badge ${areaClass[r[2]]}">${r[2]}</span></td>
+<td class="topic-cell" title="${r[3]}">${r[3]}</td>
+<td><button class="check-btn ${s.yt ? 'done' : ''}" onclick="toggle(${i},'yt')">${s.yt ? '✓' : '○'}</button></td>
+<td><button class="check-btn ${s.med ? 'done' : ''}" onclick="toggle(${i},'med')">${s.med ? '✓' : '○'}</button></td>
+<td>${ctr(i,'pins',7)}</td>
+<td>${ctr(i,'shorts',5)}</td>
+<td>${ctr(i,'quora',2)}</td>
+<td><select class="status-sel ${sCls}" onchange="setStatus(${i},this.value)">
+  <option ${s.status==='Not Started'?'selected':''}>Not Started</option>
+  <option ${s.status==='In Progress'?'selected':''}>In Progress</option>
+  <option ${s.status==='Done'?'selected':''}>Done</option>
+</select></td>
+</tr>`;
+  }).join('');
+}
+
+function ctr(i, key, max) {
+  const v = state[i][key];
+  return `<div class="counter-cell">
+<button class="count-btn" onclick="adj(${i},'${key}',-1,${max})">−</button>
+<span class="count-val">${v}</span>
+<span class="count-max">/${max}</span>
+<button class="count-btn" onclick="adj(${i},'${key}',1,${max})">+</button>
+</div>`;
+}
+
+function toggle(i, key) { state[i][key] = !state[i][key]; save(); render(); }
+function adj(i, key, d, max) { state[i][key] = Math.max(0, Math.min(max, state[i][key] + d)); save(); render(); }
+function setStatus(i, v) { state[i].status = v; save(); render(); }
+
+render();
+</script>
+</body>
+</html>
